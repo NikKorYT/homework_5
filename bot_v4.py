@@ -86,7 +86,7 @@ class Record:
         AddressBook.birthdays(name)
 
     def __str__(self) -> str:
-        return f"Contact name: {self.name}, phones: {'; '.join(p for p in self.phones)}"
+        return f"Contact name: {self.name}, phones: {'; '.join(str(p) for p in self.phones)}"
 
 
 class AddressBook(UserDict):
@@ -217,6 +217,7 @@ def parse_input(user_input) -> tuple:
     return cmd, *args
 
 
+@input_error
 def add_contact(args, book: AddressBook) -> str:
     name, phone, *_ = args
     record = book.find(name)
@@ -225,7 +226,6 @@ def add_contact(args, book: AddressBook) -> str:
         phone = Phone(phone)
     except ValueError as e:
         return str(e)
-
     if record is None:
         record = Record(name)
         record.add_phone(phone)
@@ -236,16 +236,25 @@ def add_contact(args, book: AddressBook) -> str:
     return message
 
 
+@input_error
 def change_contact(args, book: AddressBook) -> str:
     name, new_phone, *_ = args
     record = book.find(name)
     message = "Contact updated."
+
     if record is None:
         return "Contact not found."
+
+    try:
+        new_phone = Phone(new_phone)
+    except ValueError as e:
+        return str(e)
+
     record.add_phone(new_phone)
     return message
 
 
+@input_error
 def phone(args, book: AddressBook) -> str:
     name = args[0]
     record = book.find(name)
@@ -255,12 +264,14 @@ def phone(args, book: AddressBook) -> str:
     return f"These are the phone numbers for {name}: {', '.join(phone_numbers)}"
 
 
-def all(*args) -> None:
-    for name, record in AddressBook.book.data.items():
-        for phone, birthday in record:
-            print(f"{name}: \nPhones:{phone}, \nBirthdays: {birthday}")
+@input_error
+def all(book: AddressBook) -> None:
+    """Function to print all contacts in the address book"""
+    for record in book.data.values():
+        print(record)
 
 
+@input_error
 def add_birthday(args, book: AddressBook) -> str:
     name, birthday, *_ = args
     record = book.find(name)
