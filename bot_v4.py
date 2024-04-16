@@ -50,9 +50,9 @@ class Birthday(Field):
         try:
             # Додайте перевірку коректності даних
             # та перетворіть рядок на об'єкт datetime
-            self.value = datetime.strptime(value, "%d.%m.%Y")
+            self.value = datetime.datetime.strptime(value, "%d.%m.%Y")
         except ValueError:
-            raise ValueError("Invalid date format. Use DD.MM.YYYY")
+            raise ValueError
 
 
 class Record:
@@ -78,7 +78,12 @@ class Record:
         return self.phones[self.phones.index(phone_obj)]
 
     def add_birthday(self, birthday: str):
-        self.birthday = Birthday(birthday)
+        try:
+            self.birthday = Birthday(birthday)
+        except ValueError:
+            raise ValueError(
+                "Invalid date format. Use DD.MM.YYYY. Please try again."
+            )
 
     def show_birthday(self, name):
         print(f"{name}'s birthday is {self.birthday.value}")
@@ -87,7 +92,7 @@ class Record:
         AddressBook.birthdays(name)
 
     def __str__(self) -> str:
-        return f"Contact name: {self.name}, phones: {'; '.join(str(p) for p in self.phones)}"
+        return f"Contact name: {self.name}, phones: {'; '.join(str(p) for p in self.phones)}, birthday: {self.birthday.value if self.birthday else '-'}"
 
 
 class AddressBook(UserDict):
@@ -112,9 +117,10 @@ class AddressBook(UserDict):
         upcoming_birthdays = []  # return list
 
         for user in users:
+            record = users[user]
             bday_user = {}  # dictionary for each iteration
             birthday = datetime.datetime.strptime(
-                user["birthday"], "%Y.%m.%d"
+                users[user].birthday.value.strftime("%Y.%m.%d"), "%Y.%m.%d"
             ).date()  # convert string to date
 
             today = datetime.date.today()  # get today's date
@@ -156,9 +162,9 @@ class AddressBook(UserDict):
                 else:  # if birthday is on any other day
                     congratulation_date = bday_this_year
 
-                bday_user["name"] = user["name"]  # add name and birthday to dictionary
+                bday_user["name"] = record.name  # add name and birthday to dictionary
                 bday_user["congratulation_date"] = congratulation_date.strftime(
-                    "%Y.%m.%d"
+                    "%d.%m.%Y"
                 )
                 upcoming_birthdays.append(bday_user)  # append dictionary to list
         return upcoming_birthdays
@@ -284,7 +290,10 @@ def add_birthday(args, book: AddressBook) -> str:
     message = "Birthday added."
     if record is None:
         return "Contact not found."
-    record.add_birthday(birthday)
+    try:
+        record.add_birthday(birthday)
+    except ValueError as e:
+        return str(e)
     return message
 
 
@@ -297,8 +306,9 @@ def show_birthday(args, book: AddressBook) -> str:
 
 
 def birthdays(book: AddressBook) -> str:
-    return book.birthdays()
-
+    birthdays_list = book.birthdays()
+    for birthday in birthdays_list:
+        print(f"Name: {birthday['name']}, Congratulation Date: {birthday['congratulation_date']}")
 
 if __name__ == "__main__":
     main()
