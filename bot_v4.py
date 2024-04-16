@@ -69,12 +69,13 @@ class Record:
     def remove_phone(self, phone):
         self.phones.remove(phone)
 
-    def edit_phone(self, phone, new_phone):
-        self.phones[self.phones.index(phone)] = new_phone
+    def edit_phone(self, old_phone, new_phone):
+        phone_values = [phone.value for phone in self.phones]
+        self.phones[phone_values.index(old_phone.value)] = new_phone
 
     def find_phone(self, phone):
-        # return phone
-        return self.phones[self.phones.index(phone)]
+        phone_obj = Phone(phone)
+        return self.phones[self.phones.index(phone_obj)]
 
     def add_birthday(self, birthday: str):
         self.birthday = Birthday(birthday)
@@ -238,7 +239,7 @@ def add_contact(args, book: AddressBook) -> str:
 
 @input_error
 def change_contact(args, book: AddressBook) -> str:
-    name, new_phone, *_ = args
+    name, old_phone, new_phone, *_ = args
     record = book.find(name)
     message = "Contact updated."
 
@@ -246,11 +247,16 @@ def change_contact(args, book: AddressBook) -> str:
         return "Contact not found."
 
     try:
-        new_phone = Phone(new_phone)
+        old_phone_obj = Phone(old_phone)
+        new_phone_obj = Phone(new_phone)
     except ValueError as e:
         return str(e)
 
-    record.add_phone(new_phone)
+    try:
+        record.edit_phone(old_phone_obj, new_phone_obj)
+    except ValueError as e:
+        return str(e)
+
     return message
 
 
